@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/clarinet_synthesis/v15/Solution.VC.db-wal
+/.vs/clarinet_synthesis/v15/Solution.VC.db-shm
+/.vs/clarinet_synthesis/v15/Solution.VC.db
+/.vs/clarinet_synthesis/v15/ipch/AutoPCH/36678aec9ffc00fb/CLARINET.ipch
+/.vs/clarinet_synthesis/v15/Browse.VC.opendb
+/.vs/clarinet_synthesis/v15/Browse.VC.db

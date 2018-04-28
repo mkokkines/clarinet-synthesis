@@ -10,11 +10,38 @@ using namespace clarinet;
 using namespace Tonic;
 
 const int fDefaultBpm = 100;
-const double fPi = 3.1415926535897932384626;
-const double fPhaseConstant = -1 * fPi / 2;
-const double fModulatorConversion = 1.5;
+const double fDefaultVolume = .5;
+const char fNormalArticulation = 'n';
+const bool fStartOctave = false;
 
-Clarinet::Clarinet() {}
+const std::pair<string, double> fLowG = { "lowG", 174.61 };
+const std::pair<string, double> fLowAb = {"lowAb", 185.00};
+const std::pair<string, double> fLowA = { "lowA", 196.0 };
+const std::pair<string, double> fLowBb = { "lowBb", 207.65 };
+const std::pair<string, double> fLowB = { "lowB", 220.00 };
+const std::pair<string, double> fLowC = { "lowC", 233.08 };
+const std::pair<string, double> fLowDb = { "lowDb", 246.94 };
+const std::pair<string, double> fLowD = { "lowD", 261.63 };
+const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
+const std::pair<string, double> fLowE = { "lowE", 293.66 };
+const std::pair<string, double> fLowF = { "lowF", 311.13 };
+const std::pair<string, double> fMiddleGb = { "middleGb", 329.63 };
+const std::pair<string, double> fMiddleG = { "middleG", 349.23 };
+
+
+Clarinet::Clarinet() {
+	synth_ = new Synth();
+	output_ = new Generator();
+	metronome_ = new ControlMetro();
+
+	volume_ = fDefaultVolume;
+	articulation_ = fNormalArticulation;
+	higher_octave = fStartOctave;
+
+	note_frequencies = new std::map<string, double>();
+	*note_frequencies = {fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF, 
+						fMiddleGb, fMiddleG};
+}
 /*
 void Clarinet::copy(Clarinet& source) {
 	// tone_ = SineWave().freq(source.tone_->freq);
@@ -61,83 +88,60 @@ Clarinet& Clarinet::operator=(Clarinet& source) {
 Clarinet& Clarinet::operator=(Clarinet&& source) noexcept {
 	this->move(source);
 	return *this;
+} */
+
+string Clarinet::getCurrentNote() {
+	return current_note;
 }
 
-void Clarinet::setUp() {
-	articulation_ = 'n';
-	synth_ = new Synth();
-	generator_ = new Generator();
+double Clarinet::getVolume() {
+	return volume_;
+}
 
-	tone_ = new SineWave();
-	tone_->freq(0);
+bool Clarinet::getHigherOctave() {
+	return higher_octave;
+}
 
-	modulator_ = new SineWave();
-	modulator_->freq(0);
+void Clarinet::setCurrentNote(string note_name) {
+	current_note = note_name;
+}
 
-	metronome_ = new ControlMetro();
-	metronome_->bpm(fDefaultBpm);
+void Clarinet::setVolume(double new_volume) {
+	volume_ = new_volume;
+}
 
-	synth_->setOutputGen(*generator_);
+void Clarinet::setHigherOctave(bool new_octave) {
+	higher_octave = new_octave;
 }
 
 void Clarinet::setBeat(int beat) {
-	beat_ = beat;
+	metronome_->bpm(beat);
 }
 
 void Clarinet::setArticulation(char articulation) {
 	articulation_ = articulation;
 }
 
-void setVolume(double percent_change) {
+void Clarinet::generateNote(string note_name) {
+	double base_frequency = note_frequencies->at(note_name);
 
+	if (higher_octave) {
+		base_frequency *= 2;
+	}
+
+	// amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(0).release(0);
+
+	modulator_one = .75 * SineWave().freq(3 * base_frequency);
+	modulator_two = 0.5 * SineWave().freq(5 * base_frequency);
+	modulator_three = .14 * SineWave().freq(7 * base_frequency);
+	modulator_four = .5 * SineWave().freq(9 * base_frequency);
+	modulator_five = .12 * SineWave().freq(11 * base_frequency);
+	modulator_six = .17 * SineWave().freq(13 * base_frequency);
+
+	*output_ = SineWave().freq(base_frequency) + modulator_one + modulator_two + modulator_three
+		+ modulator_four + modulator_five + modulator_six;
+
+	synth_->setOutputGen(*output_ * volume_);
 }
-
-double Clarinet::generateFrequency(string note_name, double time) {
-	double tone_frequency = note_frequencies.at(note_name);
-	double modulator_frequency = fModulatorConversion * note_frequencies.at(note_name);
-	return tone_frequency - (modulation_index_envelope * modulator_frequency);
-}
-
-void Clarinet::generateNote(double frequency) {
-	tone_->freq(frequency * 2);
-	modulator_->freq(frequency * 3);
-	*generator_ = *tone_ * *modulator_;
-	synth_->setOutputGen(*generator_);
-}
-
-void Clarinet::setVolume(double percent_change) {
-
-}
-
-/*
-void Clarinet::attack(double attack_magnitude, double final_frequency) {
-attack_magnitude = std::min(attack_magnitude, fMaxAttack);
-attack_magnitude = std::max(attack_magnitude, fMinAttack);
-
-Tonic::ControlParameter volume = addParameter("volume", -12.f).displayName("Volume (dbFS)").min(-60.f).max(0.f);
-
-while (pitch->freq < final_frequency) {
-pitch->freq += final_frequency / 10000;
-this->sustain(10);
-}
-}
-
-void Clarinet::decay(double decay_magnitude, correct_frequency) {
-decay_magnitude;
-decay_magntiude /= -1;
-correct_frequency *= -1;
-
-this->attack(decay_magntiude, correct_frequency);
-}
-
-void Clarinet::sustain(double length) {
-clock_t wait = length * nanosecs + clock();
-while (wait > clock()) continue;
-}
-
-void Clarinet::release(double release_magnitude) {
-release_magnitude *= -1;
-this->attack(release_magnitude, this->freq() * -1);
-} */
 
 #endif //CLARINET_CPP

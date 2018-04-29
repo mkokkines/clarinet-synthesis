@@ -15,7 +15,21 @@ class ofApp : public ofBaseApp {
 		ofxIntSlider tempo_slider;
 		ofxFloatSlider style_;
 
-	// Fingerings for each note
+		// scale buttons
+		ofxButton b_flat_scale;
+		ofxButton e_flat_scale;
+		ofxButton a_flat_scale;
+		ofxButton d_flat_scale;
+		ofxButton g_flat_scale;
+		ofxButton b_major_scale;
+		ofxButton a_major_scale;
+		ofxButton d_major_scale;
+		ofxButton g_major_scale;
+		ofxButton c_major_scale;
+		ofxButton f_major_scale;
+		ofxButton chromatic_scale;
+
+		// Fingerings for each note
 		ofImage lowG;
 		ofImage lowAb;
 		ofImage lowA;
@@ -41,13 +55,13 @@ class ofApp : public ofBaseApp {
 		ofImage middleF;
 		ofImage highGb;
 		ofImage highG;
+
 		std::map<string, ofImage> fingering_images;
+		std::map<string, vector<string>>* scales;
+
+		std::vector<pair<double, string>>* tune;
 	
 		void loadImages();
-		void drawSliders();
-		void drawFingering(string note);
-		void audioOut(float * output, int buffer_size, int n_channels);
-		void noteKeyPressed(int upper_key);
 	
 	public:
 		void setup();
@@ -64,8 +78,16 @@ class ofApp : public ofBaseApp {
 		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg); 
+		void gotMessage(ofMessage msg);
 
+		void drawLeftSideElements();
+		void drawRightSideElements();
+		void drawFingering(string note);
+
+		void audioOut(float *output, int bufferSize, int nChannels);
+		void playScale(string scale_name);
+		void playTune();
+		void noteKeyPressed(int upper_key);
 };
 
 

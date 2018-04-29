@@ -1,4 +1,4 @@
-#include "clarinet.h"
+#include "../apps/myApps/clarinet_synthesis/clarinet_synthesis/src/clarinet.h"
 #ifndef CLARINET_CPP
 #define CLARINET_CPP
 #include <utility>
@@ -15,14 +15,20 @@ const char fNormalArticulation = 'n';
 const bool fStartOctave = false;
 
 const std::pair<string, double> fLowG = { "lowG", 174.61 };
+const std::pair<string, double> fLowAb = { "lowAb", 185.00 };
 const std::pair<string, double> fLowA = { "lowA", 196.0 };
+const std::pair<string, double> fLowBb = { "lowBb", 207.65 };
 const std::pair<string, double> fLowB = { "lowB", 220.00 };
 const std::pair<string, double> fLowC = { "lowC", 233.08 };
+const std::pair<string, double> fLowDb = { "lowDb", 246.94 };
 const std::pair<string, double> fLowD = { "lowD", 261.63 };
-const std::pair<string, double> fMiddleE = { "middleE", 293.66 };
-const std::pair<string, double> fMiddleF = { "middleF", 311.13 };
+const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
+const std::pair<string, double> fLowE = { "lowE", 293.66 };
+const std::pair<string, double> fLowF = { "lowF", 311.13 };
+const std::pair<string, double> fMiddleGb = { "middleGb", 329.63 };
 const std::pair<string, double> fMiddleG = { "middleG", 349.23 };
 
+const std::pair<string, vector<string>> fBbScale = { "Bb",{ "lowC", "lowD", "lowE", "lowF", "lowG", "middleA", "middleB", "middleC" } };
 
 Clarinet::Clarinet() {
 	synth_ = new Synth();
@@ -34,54 +40,55 @@ Clarinet::Clarinet() {
 	higher_octave = fStartOctave;
 
 	note_frequencies = new std::map<string, double>();
-	*note_frequencies = {fLowG, fLowA, fLowB, fLowC, fLowD, fMiddleE, fMiddleF, fMiddleG};
+	*note_frequencies = { fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF,
+		fMiddleGb, fMiddleG };
 }
 /*
 void Clarinet::copy(Clarinet& source) {
-	// tone_ = SineWave().freq(source.tone_->freq);
-	// modulator_ = SineWave().freq(source.modulator_->freq);
-	// metronome_ = SineWave().freq(source.tremolo->freq);
+// tone_ = SineWave().freq(source.tone_->freq);
+// modulator_ = SineWave().freq(source.modulator_->freq);
+// metronome_ = SineWave().freq(source.tremolo->freq);
 }
 
 void Clarinet::move(Clarinet&& source) {
-	tone_ = source.tone_;
-	modulator_ = source.modulator_;
-	metronome_ = source.metronome_;
-	articulation_ = source.articulation_;
-	beat_ = source.beat_;
+tone_ = source.tone_;
+modulator_ = source.modulator_;
+metronome_ = source.metronome_;
+articulation_ = source.articulation_;
+beat_ = source.beat_;
 
-	source.clear();
+source.clear();
 }
 
 void Clarinet::clear() {
-	tone_ = nullptr;
-	modulator_ = nullptr;
-	metronome_ = nullptr;
-	articulation_ = NULL;
-	beat_ = NULL;
+tone_ = nullptr;
+modulator_ = nullptr;
+metronome_ = nullptr;
+articulation_ = NULL;
+beat_ = NULL;
 }
 
 Clarinet::Clarinet(Clarinet& source) {
-	this->copy(source);
+this->copy(source);
 }
 
 
 Clarinet::Clarinet(Clarinet&& source) noexcept {
-	this->move(source);
+this->move(source);
 }
 
 Clarinet::~Clarinet() {
-	this->clear();
+this->clear();
 }
 
 Clarinet& Clarinet::operator=(Clarinet& source) {
-	this->copy(source);
-	return *this;
+this->copy(source);
+return *this;
 }
 
 Clarinet& Clarinet::operator=(Clarinet&& source) noexcept {
-	this->move(source);
-	return *this;
+this->move(source);
+return *this;
 } */
 
 string Clarinet::getCurrentNote() {
@@ -116,6 +123,26 @@ void Clarinet::setArticulation(char articulation) {
 	articulation_ = articulation;
 }
 
+string Clarinet::adjustForOctave(string note) {
+	if (higher_octave && note.substr(0, 3) == "low") {
+		return note.replace(0, 3, "middle");
+	} else if (higher_octave && note.substr(0, 6) == "middle") {
+		return note.replace(0, 6, "high");
+	} else {
+		return note;
+	}
+}
+
+void Clarinet::determineOctaveFromName(string note) {
+	if (note.substr(0, 7) == "middleG") {
+		higher_octave = false;
+	} else if (note.substr(0, 3) != "low") {
+		higher_octave = true;
+	} else {
+		higher_octave = false;
+	}
+}
+
 void Clarinet::generateNote(string note_name) {
 	double base_frequency = note_frequencies->at(note_name);
 
@@ -123,7 +150,7 @@ void Clarinet::generateNote(string note_name) {
 		base_frequency *= 2;
 	}
 
-	// amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(0).release(0);
+//	amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(.5).release(.12);
 
 	modulator_one = .75 * SineWave().freq(3 * base_frequency);
 	modulator_two = 0.5 * SineWave().freq(5 * base_frequency);
@@ -138,4 +165,6 @@ void Clarinet::generateNote(string note_name) {
 	synth_->setOutputGen(*output_ * volume_);
 }
 
+
 #endif //CLARINET_CPP
+

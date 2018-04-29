@@ -28,6 +28,7 @@ namespace clarinet {
 		bool higher_octave;
 
 		std::map<string, double>* note_frequencies;
+		std::map<string, vector<string>>* scales;
 
 		/* void Clarinet::copy(Clarinet& source);
 		void Clarinet::move(Clarinet&& source);
@@ -37,13 +38,13 @@ namespace clarinet {
 		Tonic::Synth* synth_;
 		Clarinet();                                         // Default constructor
 															// Big 5
-		/* Clarinet(Clarinet& source);							   // Copy constructor
-															   // Clarinet(Clarinet&& source) noexcept;            // Move constructor
-															   // ~Clarinet();                                        // Destructor
-															   // 	Clarinet& operator=(Clarinet source);      // Copy assignment operator
-															   //	Clarinet& operator=(Clarinet&& source) noexcept; // Move assignment operator
+															/* Clarinet(Clarinet& source);							   // Copy constructor
+															// Clarinet(Clarinet&& source) noexcept;            // Move constructor
+															// ~Clarinet();                                        // Destructor
+															// 	Clarinet& operator=(Clarinet source);      // Copy assignment operator
+															//	Clarinet& operator=(Clarinet&& source) noexcept; // Move assignment operator
 
-		*/
+															*/
 		string getCurrentNote();
 		double Clarinet::getVolume();
 		bool Clarinet::getHigherOctave();
@@ -55,12 +56,12 @@ namespace clarinet {
 		void Clarinet::setArticulation(char articulation);
 		void Clarinet::setBeat(int beat);
 
+		string adjustForOctave(string note);
+
 		void Clarinet::generateNote(string note_name);
-		// void Clarinet::trigger();
-		// void Clarinet::crescendo(double percentage);
 	};
 
-} 
+}
 #endif //CLARINET_H
 
 #pragma once

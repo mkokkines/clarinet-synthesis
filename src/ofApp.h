@@ -2,17 +2,22 @@
 #include "../addons/ofxGui/src/ofxSlider.h"
 #include "../addons/ofxGui/src/ofxButton.h"
 #include "ofMain.h"
-#include "../clarinet.h"
+#include "clarinet.h"
+#include "../audioThread.h"
 
 class ofApp : public ofBaseApp {
 	private:
-		clarinet::Clarinet* clarinet_;
+		AudioThread* audio_thread;
+
+		string current_note;
+		vector<string> current_scale;
+		std::clock_t scale_clock;
 
 		ofxFloatSlider volume_slider;
 		ofxToggle upper_octave;
 
 		ofxButton play_tune;
-		ofxIntSlider tempo_slider;
+		ofxFloatSlider scale_tempo_slider;
 		ofxFloatSlider style_;
 
 		// scale buttons
@@ -30,6 +35,7 @@ class ofApp : public ofBaseApp {
 		ofxButton chromatic_scale;
 
 		// Fingerings for each note
+		ofImage lowGb;
 		ofImage lowG;
 		ofImage lowAb;
 		ofImage lowA;
@@ -66,28 +72,42 @@ class ofApp : public ofBaseApp {
 	public:
 		void setup();
 		void update();
-		void draw();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
-		void mouseMoved(int x, int y );
 		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
 		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 
+		void draw();
 		void drawLeftSideElements();
 		void drawRightSideElements();
 		void drawFingering(string note);
 
-		void audioOut(float *output, int bufferSize, int nChannels);
-		void playScale(string scale_name);
-		void playTune();
+		void scaleTempoChanged(float &scale_tempo_slider);
+		void volumeChanged(float &volume);
+
+		string ofApp::adjustForOctave(string note);
+
+		// void playScale(string scale_name);
+		// void playTune();
 		void noteKeyPressed(int upper_key);
+
+		void ofApp::upperOctavePressed(bool &pressed);
+
+		// Scale Buttons Pressed
+		void bFlatScalePressed();
+		void eFlatScalePressed();
+		void aFlatScalePressed();
+		void dFlatScalePressed();
+		void gFlatScalePressed();
+		void bMajorScalePressed();
+		void aMajorScalePressed();
+		void dMajorScalePressed();
+		void gMajorScalePressed();
+		void cMajorScalePressed();
+		void fMajorScalePressed();
+		void chromaticScalePressed();
 };
-
-

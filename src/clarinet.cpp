@@ -9,11 +9,12 @@
 using namespace clarinet;
 using namespace Tonic;
 
-const int fDefaultBpm = 100;
-const double fDefaultVolume = .5;
+const int fDefaultBpm = 60;
+const double fDefaultVolume = .03;
 const char fNormalArticulation = 'n';
 const bool fStartOctave = false;
 
+const std::pair<string, double> fLowGb{ "lowGb", 164.81 };
 const std::pair<string, double> fLowG = { "lowG", 174.61 };
 const std::pair<string, double> fLowAb = { "lowAb", 185.00 };
 const std::pair<string, double> fLowA = { "lowA", 196.0 };
@@ -25,74 +26,22 @@ const std::pair<string, double> fLowD = { "lowD", 261.63 };
 const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
 const std::pair<string, double> fLowE = { "lowE", 293.66 };
 const std::pair<string, double> fLowF = { "lowF", 311.13 };
-const std::pair<string, double> fMiddleGb = { "middleGb", 329.63 };
-const std::pair<string, double> fMiddleG = { "middleG", 349.23 };
-
-const std::pair<string, vector<string>> fBbScale = { "Bb",{ "lowC", "lowD", "lowE", "lowF", "lowG", "middleA", "middleB", "middleC" } };
 
 Clarinet::Clarinet() {
 	synth_ = new Synth();
 	output_ = new Generator();
 	metronome_ = new ControlMetro();
 
+	current_note = "lowGb";
+
 	volume_ = fDefaultVolume;
 	articulation_ = fNormalArticulation;
 	higher_octave = fStartOctave;
 
 	note_frequencies = new std::map<string, double>();
-	*note_frequencies = { fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF,
-		fMiddleGb, fMiddleG };
-}
-/*
-void Clarinet::copy(Clarinet& source) {
-// tone_ = SineWave().freq(source.tone_->freq);
-// modulator_ = SineWave().freq(source.modulator_->freq);
-// metronome_ = SineWave().freq(source.tremolo->freq);
-}
+	*note_frequencies = { fLowGb, fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF };
 
-void Clarinet::move(Clarinet&& source) {
-tone_ = source.tone_;
-modulator_ = source.modulator_;
-metronome_ = source.metronome_;
-articulation_ = source.articulation_;
-beat_ = source.beat_;
-
-source.clear();
-}
-
-void Clarinet::clear() {
-tone_ = nullptr;
-modulator_ = nullptr;
-metronome_ = nullptr;
-articulation_ = NULL;
-beat_ = NULL;
-}
-
-Clarinet::Clarinet(Clarinet& source) {
-this->copy(source);
-}
-
-
-Clarinet::Clarinet(Clarinet&& source) noexcept {
-this->move(source);
-}
-
-Clarinet::~Clarinet() {
-this->clear();
-}
-
-Clarinet& Clarinet::operator=(Clarinet& source) {
-this->copy(source);
-return *this;
-}
-
-Clarinet& Clarinet::operator=(Clarinet&& source) noexcept {
-this->move(source);
-return *this;
-} */
-
-string Clarinet::getCurrentNote() {
-	return current_note;
+	scales = new std::map<string, vector<string>>();
 }
 
 double Clarinet::getVolume() {
@@ -101,10 +50,6 @@ double Clarinet::getVolume() {
 
 bool Clarinet::getHigherOctave() {
 	return higher_octave;
-}
-
-void Clarinet::setCurrentNote(string note_name) {
-	current_note = note_name;
 }
 
 void Clarinet::setVolume(double new_volume) {
@@ -123,37 +68,36 @@ void Clarinet::setArticulation(char articulation) {
 	articulation_ = articulation;
 }
 
+// Changes the name of the note if it is in the higher octave
 string Clarinet::adjustForOctave(string note) {
 	if (higher_octave && note.substr(0, 3) == "low") {
 		return note.replace(0, 3, "middle");
-	} else if (higher_octave && note.substr(0, 6) == "middle") {
-		return note.replace(0, 6, "high");
-	} else {
-		return note;
 	}
-}
-
-void Clarinet::determineOctaveFromName(string note) {
-	if (note.substr(0, 7) == "middleG") {
-		higher_octave = false;
-	} else if (note.substr(0, 3) != "low") {
+	else if (note.substr(0, 6) == "middle") {
 		higher_octave = true;
-	} else {
-		higher_octave = false;
 	}
+
+	return note;
 }
 
+// Firsts adjusts to ensure the correct octave is being played; then uses a base tone and six modulators to make the note sound
+// akin to a real woodwind instrument
 void Clarinet::generateNote(string note_name) {
+	if (note_name.substr(0, 6) == "middle") {
+		higher_octave = true;
+		note_name.replace(0, 6, "low");
+	}
+
 	double base_frequency = note_frequencies->at(note_name);
 
 	if (higher_octave) {
 		base_frequency *= 2;
 	}
 
-//	amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(.5).release(.12);
+	// amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(.5).release(.12);
 
-	modulator_one = .75 * SineWave().freq(3 * base_frequency);
-	modulator_two = 0.5 * SineWave().freq(5 * base_frequency);
+	modulator_one = .75 * SineWave().freq(3 * base_frequency);  // The leading decimal values correspond to the realtive importance
+	modulator_two = 0.5 * SineWave().freq(5 * base_frequency);  // of each modulator
 	modulator_three = .14 * SineWave().freq(7 * base_frequency);
 	modulator_four = .5 * SineWave().freq(9 * base_frequency);
 	modulator_five = .12 * SineWave().freq(11 * base_frequency);
@@ -164,7 +108,6 @@ void Clarinet::generateNote(string note_name) {
 
 	synth_->setOutputGen(*output_ * volume_);
 }
-
 
 #endif //CLARINET_CPP
 

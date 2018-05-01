@@ -1,8 +1,12 @@
 #include "ofApp.h"
 
 const double fVolumeInterval = .05;
-const int fRightSideFirstColumn = 700;
-const int fRightSideSecondColumn = 825;
+const int fRightSideFirstColumn = 725;
+const int fRightSideSecondColumn = 850;
+const int fScaleButtonSize = 50;
+
+const double fDefaultScaleTempo = 120;
+const double fSecPerMin = 60;
 
 const std::pair<string, vector<string>> fBbScale = { "Bb", {"lowC", "lowD", "lowE", "lowF", "middleG", "middleA", "middleB", "middleC"} };
 const std::pair<string, vector<string>> fEbScale = { "Eb", {"lowF", "middleG", "middleA", "middleBb", "middleC", "middleD", "middleE", 
@@ -11,17 +15,17 @@ const std::pair<string, vector<string>> fAbScale = { "Ab", {"lowBb", "lowC", "lo
 const std::pair<string, vector<string>> fDbScale = { "Db", {"lowEb", "lowF", "middleG", "middleAb", "middleBb", "middleC", "middleD", 
 													"middleEb"} };
 const std::pair<string, vector<string>> fGbScale = { "Gb", {"lowAb", "lowBb", "lowC", "lowDb", "lowEb", "lowF", "middleG", "middleAb"} };
-const std::pair<string, vector<string>> fBMajorScale = { "BMajor", {"lowDb", "lowEb", "lowF", "lowGb", "lowAb", "lowBb", "lowC", 
-														"lowDb" } };
-const std::pair<string, vector<string>> fAMajorScale = { "AMajor", {"lowB", "lowDb", "lowEb", "lowE", "middleGb", "lowAb", "lowBb", 
-														"lowB"} };
+const std::pair<string, vector<string>> fBMajorScale = { "BMajor", {"lowDb", "lowEb", "lowF", "middleGb", "middleAb", "middleBb", "middleC", 
+														"middleDb" } };
+const std::pair<string, vector<string>> fAMajorScale = { "AMajor", {"lowB", "lowDb", "lowEb", "lowE", "middleGb", "middleAb", "middleBb", 
+														"middleB"} };
 const std::pair<string, vector<string>> fDMajorScale = { "DMajor", {"lowE", "middleGb", "middleAb", "middleA", "middleB", "middleDb",
 														"middleEb", "middleE"} };
 const std::pair<string, vector<string>> fGMajorScale = { "GMajor", {"lowA", "lowB", "lowDb", "lowD", "lowE", "middleGb", "middleAb", 
 														"middleA"} };
 const std::pair<string, vector<string>> fCMajorScale = { "CMajor", {"lowD", "lowE", "middleGb", "middleG", "middleA", "middleB", 
-														"middleD", "middleDb"} };
-const std::pair<string, vector<string>> fFMajorScale = { "FMajor", {"lowG", "lowA", "lowB", "lowC", "lowD", "lowE", "lowGb", "lowG"} };
+														"middleDb", "middleD"} };
+const std::pair<string, vector<string>> fFMajorScale = { "FMajor", {"lowG", "lowA", "lowB", "lowC", "lowD", "lowE", "middleGb", "middleG"} };
 const std::pair<string, vector<string>> fChromaticScale = { "chromatic", {"lowG", "lowAb", "lowA", "lowBb", "lowB", "lowC", "lowDb",
 															"lowD", "lowEb", "lowE", "lowF", "middleGb", "middleG"} };
 
@@ -29,39 +33,61 @@ const std::pair<string, vector<string>> fChromaticScale = { "chromatic", {"lowG"
 void ofApp::setup() {
 	loadImages();
 
-	clarinet_ = new clarinet::Clarinet();
-	clarinet_->setCurrentNote("middleG");
+	audio_thread = new AudioThread();
+
+	current_note = "middleG";
+	current_scale = {};
 
 	upper_octave.setup("Upper Octave", false, 75, 75);
-	volume_slider.setup("Volume", .5, 0.0, 1.0, 200, 60);
+	upper_octave.addListener(this, &ofApp::upperOctavePressed);
 
-	b_flat_scale.setup("Bb Scale", 75, 75);
-	e_flat_scale.setup("Eb Scale", 75, 75);
-	a_flat_scale.setup("Ab Scale", 75, 75);
-	d_flat_scale.setup("Db Scale", 75, 75);
-	g_flat_scale.setup("Gb Scale", 75, 75);
-	b_major_scale.setup("B Major Scale", 75, 75);
-	a_major_scale.setup("A Major Scale", 75, 75);
-	d_major_scale.setup("D Major Scale", 75, 75);
-	g_major_scale.setup("G Major Scale", 75, 75);
-	c_major_scale.setup("C Major Scale", 75, 75);
-	f_major_scale.setup("F Major Scale", 75, 75);
-	chromatic_scale.setup("Chromatic Scale", 75, 75);
+	volume_slider.addListener(this, &ofApp::volumeChanged);
+    volume_slider.setup("Volume", .5, 0.0, 1.0, 200, 60);
+
+	b_flat_scale.setup("Bb", fScaleButtonSize, fScaleButtonSize);
+	b_flat_scale.addListener(this, &ofApp::bFlatScalePressed);
+	e_flat_scale.setup("Eb", fScaleButtonSize, fScaleButtonSize);
+	e_flat_scale.addListener(this, &ofApp::eFlatScalePressed);
+	a_flat_scale.setup("Ab", fScaleButtonSize, fScaleButtonSize);
+	a_flat_scale.addListener(this, &ofApp::aFlatScalePressed);
+	d_flat_scale.setup("Db", fScaleButtonSize, fScaleButtonSize);
+	d_flat_scale.addListener(this, &ofApp::dFlatScalePressed);
+	g_flat_scale.setup("Gb", fScaleButtonSize, fScaleButtonSize);
+	g_flat_scale.addListener(this, &ofApp::gFlatScalePressed);
+
+	b_major_scale.setup("B Major", fScaleButtonSize, fScaleButtonSize);
+	b_major_scale.addListener(this, &ofApp::bMajorScalePressed);
+	a_major_scale.setup("A Major", fScaleButtonSize, fScaleButtonSize);
+	a_major_scale.addListener(this, &ofApp::aMajorScalePressed);
+	d_major_scale.setup("D Major", fScaleButtonSize, fScaleButtonSize);
+	d_major_scale.addListener(this, &ofApp::dMajorScalePressed);
+	g_major_scale.setup("G Major", fScaleButtonSize, fScaleButtonSize);
+	g_major_scale.addListener(this, &ofApp::gMajorScalePressed);
+	c_major_scale.setup("C Major", fScaleButtonSize, fScaleButtonSize);
+	c_major_scale.addListener(this, &ofApp::cMajorScalePressed);
+	f_major_scale.setup("F Major", fScaleButtonSize, fScaleButtonSize);
+	f_major_scale.addListener(this, &ofApp::fMajorScalePressed);
+
+	chromatic_scale.setup("Chromatic", fScaleButtonSize, fScaleButtonSize);
+	chromatic_scale.addListener(this, &ofApp::chromaticScalePressed);
 
 	play_tune.setup("Play Tune", 100, 100);
-	tempo_slider.setup("Tempo", 100.0, 0.0, 200.0, 200, 60);
+
+	scale_tempo_slider.addListener(this, &ofApp::scaleTempoChanged);
+	scale_tempo_slider.setup("Scale Tempo BPM", fDefaultScaleTempo, 0.0, fDefaultScaleTempo * 2, 200, 60);
+
 	style_.setup("Style", 100.0, 0.0, 200.0, 200, 60);
 
 	scales = new std::map<string, vector<string>>();
 	*scales = { fBbScale, fEbScale, fAbScale, fDbScale, fGbScale, fBMajorScale, fAMajorScale, fDMajorScale, fGMajorScale, 
 				fCMajorScale, fFMajorScale, fChromaticScale };
+	audio_thread->setScales(*scales);
 
 	ofSetFrameRate(60);
-	ofSoundStreamSetup(2, 0, this, 48000, 256, 4);
-	ofSoundStreamStop();
 }
 
 void ofApp::loadImages() {
+	lowGb.load("note_images/lowGb.png");
 	lowG.load("note_images/lowG.png");
 	lowAb.load("note_images/lowAb.png");
 	lowA.load("note_images/lowA.png");
@@ -86,7 +112,7 @@ void ofApp::loadImages() {
 	middleE.load("note_images/middleE.png");
 	middleF.load("note_images/middleF.png");
 
-	fingering_images = { { "lowG", lowG }, {"lowAb", lowAb}, { "lowA", lowA }, {"lowBb", lowBb}, { "lowB", lowB },
+	fingering_images = { {"lowGb", lowGb}, { "lowG", lowG }, {"lowAb", lowAb}, { "lowA", lowA }, {"lowBb", lowBb}, { "lowB", lowB },
 						 { "lowC", lowC }, {"lowDb", lowDb}, { "lowD", lowD }, {"lowEb", lowEb}, { "lowE", lowE },
 						 { "lowF", lowF }, {"middleGb", middleGb}, { "middleG", middleG }, {"middleAb", middleAb},
 						 {"middleA", middleA}, {"middleBb", middleBb}, {"middleB", middleB}, {"middleC", middleC},
@@ -96,56 +122,27 @@ void ofApp::loadImages() {
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	clarinet_->setVolume(volume_slider);
-	clarinet_->setHigherOctave(upper_octave);
-}
+	if (!current_scale.empty()) {
+		double time_elapsed = (std::clock() - scale_clock) / (double)CLOCKS_PER_SEC;
+		bool enough_time_elapsed = time_elapsed > (fSecPerMin / scale_tempo_slider);
 
-//--------------------------------------------------------------
-void ofApp::audioOut(float *output, int bufferSize, int nChannels) {
-	clarinet_->generateNote(clarinet_->getCurrentNote());
-
-
-	if (clarinet_->synth_ != NULL) {
-		clarinet_->synth_->fillBufferOfFloats(output, bufferSize, nChannels);
-	 }
-}
-
-// Plays each note in a scale for a specified period of time -- 60 divided by specified the beats per minute
-void ofApp::playScale(string scale_name) {
-	vector<string> scale_notes = scales->at(scale_name);
-	int note_number = 0;
-
-	std::clock_t start = std::clock();
-
-	while (note_number < scale_notes.size()) {
-		clarinet_->setCurrentNote(scale_notes[note_number]);
-		ofSoundStreamStart();
-		double elapsed_time = (std::clock() - start) / (double) CLOCKS_PER_SEC; // finds the number of elapsed seconds
-
-		if (elapsed_time >= .3) {   // NOTE: .2 seconds is a temporary test value
-			note_number++;
-			start = std::clock();
+		if (enough_time_elapsed && current_scale.size() != 1) {
+			current_scale.erase(current_scale.begin());
+			current_note = current_scale[0];
+			scale_clock = std::clock();
+		} else if (enough_time_elapsed) {
+			current_scale.erase(current_scale.begin());
+			audio_thread->stopThread();
 		}
-	}
-
-}
-
-void ofApp::playTune() {
-	int note_number = 0;
-
-	while (note_number < tune->size()) {
-		// clarinet_->setCurrentNote(*tune[note_number].second);
-	}
+	} 
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	string title = "Clarinet Synthesis Studio";
-
 	ofSetBackgroundColor(255, 255, 255);
 	drawLeftSideElements();
 	drawRightSideElements();
-	drawFingering(clarinet_->getCurrentNote());
+	drawFingering(current_note);
 }
 
 void ofApp::drawLeftSideElements() {
@@ -166,51 +163,71 @@ void ofApp::drawLeftSideElements() {
 }
 
 void ofApp::drawRightSideElements() {
-	tempo_slider.draw();
-	tempo_slider.setPosition(600, 50);
+	scale_tempo_slider.draw();
+	scale_tempo_slider.setPosition(712, 50);
 
 	b_flat_scale.draw();
 	b_flat_scale.setPosition(fRightSideFirstColumn, 150);
+	b_flat_scale.setTextColor(0);
 
 	e_flat_scale.draw();
-	e_flat_scale.setPosition(fRightSideFirstColumn, 275);
+	e_flat_scale.setPosition(fRightSideFirstColumn, 250);
+	e_flat_scale.setTextColor(0);
 
 	a_flat_scale.draw();
-	a_flat_scale.setPosition(fRightSideFirstColumn, 400);
+	a_flat_scale.setPosition(fRightSideFirstColumn, 350);
+	a_flat_scale.setTextColor(0);
 
 	d_flat_scale.draw();
-	d_flat_scale.setPosition(fRightSideFirstColumn, 525);
+	d_flat_scale.setPosition(fRightSideFirstColumn, 450);
+	d_flat_scale.setTextColor(0);
 
 	g_flat_scale.draw();
-	g_flat_scale.setPosition(fRightSideFirstColumn, 650);
+	g_flat_scale.setPosition(fRightSideFirstColumn, 550);
+	g_flat_scale.setTextColor(0);
 
 	b_major_scale.draw();
-	b_major_scale.setPosition(fRightSideFirstColumn, 775);
+	b_major_scale.setPosition(fRightSideFirstColumn, 650);
+	b_major_scale.setTextColor(0);
 
 	a_major_scale.draw();
 	a_major_scale.setPosition(fRightSideSecondColumn, 150);
+	a_major_scale.setTextColor(0);
 
 	d_major_scale.draw();
-	d_major_scale.setPosition(fRightSideSecondColumn, 275);
+	d_major_scale.setPosition(fRightSideSecondColumn, 250);
+	d_major_scale.setTextColor(0);
 
 	g_major_scale.draw();
-	g_major_scale.setPosition(fRightSideSecondColumn, 400);
+	g_major_scale.setPosition(fRightSideSecondColumn, 350);
+	g_major_scale.setTextColor(0);
 
 	c_major_scale.draw();
-	c_major_scale.setPosition(fRightSideSecondColumn, 525);
+	c_major_scale.setPosition(fRightSideSecondColumn, 450);
+	c_major_scale.setTextColor(0);
 
 	f_major_scale.draw();
-	f_major_scale.setPosition(fRightSideSecondColumn, 650);
+	f_major_scale.setPosition(fRightSideSecondColumn, 550);
+	f_major_scale.setTextColor(0);
 
 	chromatic_scale.draw();
-	chromatic_scale.setPosition(fRightSideSecondColumn, 775);
+	chromatic_scale.setPosition(fRightSideSecondColumn, 650);
+	chromatic_scale.setTextColor(0);
 }
 
 // Draws the clarinet images
 void ofApp::drawFingering(string note) {
-	note = clarinet_->adjustForOctave(note);
+	note = adjustForOctave(note);
 	ofImage current_fingering = fingering_images.at(note);
 	current_fingering.draw(425, 0, 200, 700);
+}
+
+string ofApp::adjustForOctave(string note) {
+	if (upper_octave && note.substr(0, 3) == "low") {
+		return note.replace(0, 3, "middle");
+	} else {
+		return note;
+	}
 }
 
 //--------------------------------------------------------------
@@ -222,10 +239,10 @@ void ofApp::keyPressed(int key) {
 		volume_slider = volume_slider - fVolumeInterval;
 	} else if (upper_key == '+') {
 		volume_slider = volume_slider + fVolumeInterval;
-	} else if (upper_key == OF_KEY_SHIFT) {	 
+	} else if (upper_key == OF_KEY_SHIFT) {
 		upper_octave = !upper_octave;
-	} else if (upper_key == 'Z') {
-		playScale("Bb");
+		bool isHigherOctave = audio_thread->getClarinet()->getHigherOctave();
+		audio_thread->getClarinet()->setHigherOctave(!isHigherOctave);
 	} else {
 		noteKeyPressed(upper_key);
 	}
@@ -233,50 +250,60 @@ void ofApp::keyPressed(int key) {
 }
 
 void ofApp::noteKeyPressed(int upper_key) {
-	if (upper_key == 'A') {
-		clarinet_->setCurrentNote("lowG");
-		ofSoundStreamStart();
+	if (upper_key == 'Q') {
+		current_note = "lowGb";
+		audio_thread->setCurrentNote("lowGb");
+		audio_thread->startThread(true, false);
+	} else if (upper_key == 'A') {
+		current_note = "lowG";
+		audio_thread->setCurrentNote("lowG");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'W') {
-		clarinet_->setCurrentNote("lowAb");
-		ofSoundStreamStart();
+		current_note = "lowAb";
+		audio_thread->setCurrentNote("lowAb");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'S') {
-		clarinet_->setCurrentNote("lowA");
-		ofSoundStreamStart();
+		current_note = "lowA";
+		audio_thread->setCurrentNote("lowA");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'E') {
-		clarinet_->setCurrentNote("lowBb");
-		ofSoundStreamStart();
+		current_note = "lowBb";
+		audio_thread->setCurrentNote("lowBb");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'D') {
-		clarinet_->setCurrentNote("lowB");
-		ofSoundStreamStart();
+		current_note = "lowB";
+		audio_thread->setCurrentNote("lowB");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'F') {
-		clarinet_->setCurrentNote("lowC");
-		ofSoundStreamStart();
+		current_note = "lowC";
+		audio_thread->setCurrentNote("lowC");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'T') {
-		clarinet_->setCurrentNote("lowDb");
-		ofSoundStreamStart();
+		current_note = "lowDb";
+		audio_thread->setCurrentNote("lowDb");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'G') {
-		clarinet_->setCurrentNote("lowD");
-		ofSoundStreamStart();
+		current_note = "lowD";
+		audio_thread->setCurrentNote("lowD");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'Y') {
-		clarinet_->setCurrentNote("lowEb");
-		ofSoundStreamStart();
+		current_note = "lowEb";
+		audio_thread->setCurrentNote("lowEb");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'H') {
-		clarinet_->setCurrentNote("lowE");
-		ofSoundStreamStart();
+		current_note = "lowE";
+		audio_thread->setCurrentNote("lowE");
+		audio_thread->startThread(true, false);
 	} else if (upper_key == 'J') {
-		clarinet_->setCurrentNote("lowF");
-		ofSoundStreamStart();
-	} 
+		current_note = "lowF";
+		audio_thread->setCurrentNote("lowF");
+		audio_thread->startThread(true, false);
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
-	ofSoundStreamStop();
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
+	audio_thread->stopThread();
 }
 
 //--------------------------------------------------------------
@@ -284,22 +311,120 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 }
 
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button) {
+void ofApp::scaleTempoChanged(float &scale_tempo_slider) {
+	audio_thread->setScaleTempo(scale_tempo_slider);
+}
+
+void ofApp::volumeChanged(float &volume_slider) {
+	audio_thread->getClarinet()->setVolume(volume_slider);
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
+void ofApp::upperOctavePressed(bool &pressed) {
+	upper_octave = !upper_octave;
+	bool isHigherOctave = audio_thread->getClarinet()->getHigherOctave();
+	audio_thread->getClarinet()->setHigherOctave(pressed);
+	scale_clock = std::clock();
+}
 
+void ofApp::bFlatScalePressed() {
+	audio_thread->setScaleToPlay("Bb");
+	audio_thread->startThread();
+	current_scale = scales->at("Bb");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::eFlatScalePressed() {
+	audio_thread->setScaleToPlay("Eb");
+	audio_thread->startThread();
+	current_scale = scales->at("Eb");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::aFlatScalePressed() {
+	audio_thread->setScaleToPlay("Ab");
+	audio_thread->startThread();
+	current_scale = scales->at("Ab");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::dFlatScalePressed() {
+	audio_thread->setScaleToPlay("Db");
+	audio_thread->startThread();
+	current_scale = scales->at("Db");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::gFlatScalePressed() {
+	audio_thread->setScaleToPlay("Gb");
+	audio_thread->startThread();
+	current_scale = scales->at("Gb");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::bMajorScalePressed() {
+	audio_thread->setScaleToPlay("BMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("BMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::aMajorScalePressed() {
+	audio_thread->setScaleToPlay("AMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("AMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::dMajorScalePressed() {
+	audio_thread->setScaleToPlay("DMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("DMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::gMajorScalePressed() {
+	audio_thread->setScaleToPlay("GMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("GMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::cMajorScalePressed() {
+	audio_thread->setScaleToPlay("CMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("CMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::fMajorScalePressed() {
+	audio_thread->setScaleToPlay("FMajor");
+	audio_thread->startThread();
+	current_scale = scales->at("FMajor");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
+}
+
+void ofApp::chromaticScalePressed() {
+	audio_thread->setScaleToPlay("chromatic");
+	audio_thread->startThread();
+	current_scale = scales->at("chromatic");
+	current_note = current_scale[0];
+	scale_clock = std::clock();
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
+void ofApp::mouseReleased(int x, int y, int button) {
 
 }
 

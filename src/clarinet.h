@@ -36,20 +36,11 @@ namespace clarinet {
 
 	public:
 		Tonic::Synth* synth_;
-		Clarinet();                                         // Default constructor
-															// Big 5
-															/* Clarinet(Clarinet& source);							   // Copy constructor
-															// Clarinet(Clarinet&& source) noexcept;            // Move constructor
-															// ~Clarinet();                                        // Destructor
-															// 	Clarinet& operator=(Clarinet source);      // Copy assignment operator
-															//	Clarinet& operator=(Clarinet&& source) noexcept; // Move assignment operator
+		Clarinet();
 
-															*/
-		string getCurrentNote();
 		double Clarinet::getVolume();
 		bool Clarinet::getHigherOctave();
 
-		void Clarinet::setCurrentNote(string note_name);
 		void Clarinet::setVolume(double new_volume);
 		void Clarinet::setHigherOctave(bool new_octave);
 

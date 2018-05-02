@@ -4,6 +4,7 @@
 #include "ofMain.h"
 #include "clarinet.h"
 #include "../audioThread.h"
+#include "../recordingComparer.h"
 
 const double fVolumeInterval = .05;
 
@@ -20,9 +21,10 @@ const double fVolumeStart = 0.5;
 
 const int fUpOctaveYCoord = 150;
 const int fUpOctaveSize = 75;
-const int fRecordYCoord = 275;
-const int fPlaybackYCoord = 400;
-const int fNonScaleButtonSize = 100;
+const int fRecordYCoord = 250;
+const int fPlaybackYCoord = 350;
+const int fCompareYCoord = 450;
+const int fNonScaleButtonSize = 85;
 const bool fToggleDefault = false;
 
 const int fRightSideFirstColumn = 725;
@@ -53,7 +55,16 @@ const double fSecPerMin = 60;
 
 const double fProgramDelay = .63;
 
-const string fPauseMessage = "Welcome to the clarinet music synthesis application. The aim of this application is to allow you to play realistic-sounding clarinet music and learn the basics of the instrument. The commands are as follows:\n 1) Press + to increase the volume and - to decrease the volume. Alternatively, you can drag the slider. \n 2) Press shift to change the octave. Alternatively, you can press the button. 3) Press any of the scale buttons to see that scale played.\n 4) Drag the tempo slider to change the speed at which the scales are played.";
+const string fPauseFirstLine = "Welcome to the clarinet music synthesis application.\n";
+const string fPauseSecondLine = "The app will allow you to play/learn realistic clarinet.\n";
+const string fPauseThirdLine = "The commands are as follows:\n";
+const string fPauseFourthLine = "1) Keys A-J play normal notes; Q, W, E, T, Y, I play flats\n.";
+const string fPauseFifthLine = "2) Press + and -, or use the slider, to change the volume.\n"; 
+const string fPauseSixthLine = "3) Press shift or click the button to switch the octave.\n";
+const string fPauseSeventhLine = "4) Press any of the scale buttons to see that scale played.\n";
+const string fPauseEighthLine = "5) Drag the tempo slider to change the bpm of the scales.\n";
+const string fPauseNinthLine = "6) Press the record button and play a series of notes to record\n";
+const string fPauseTenthLine = "7) Press the playback button to hear your most recent recording\n";
 
 const map<char, string> key_to_note = { { 'Q', "lowGb" },{ 'A', "lowG" },{ 'W', "lowAb" },{ 'S', "lowA" },{ 'E', "lowBb" },
 { 'D', "lowB" },{ 'F', "lowC" },{ 'T', "lowDb" },{ 'G', "lowD" },{ 'Y', "lowEb" },
@@ -85,11 +96,15 @@ class ofApp : public ofBaseApp {
 private:
 	AudioThread * audio_thread;
 
+	RecordingComparer comparer;
+	pair<string, string> compare_messages;
+
 	bool is_paused;
 	bool is_recording;
 
 	vector<pair<string, double>> scale_notes;
 	vector<pair<string, double>> recorded_notes;
+	vector<pair<string, double>> past_recorded_notes;
 
 	string current_note;
 	vector<string> current_scale;
@@ -100,6 +115,7 @@ private:
 	ofxToggle upper_octave;
 	ofxToggle record_;
 	ofxToggle playback_;
+	ofxToggle compare_recordings;
 
 	// scale buttons
 	ofxButton b_flat_scale;
@@ -170,6 +186,7 @@ public:
 	void draw();
 	void drawFingering(string note);
 	void drawPaused();
+	void drawCompareMessages();
 
 	void scaleTempoChanged(float &scale_tempo_slider);
 	void volumeChanged(float &volume);
@@ -182,6 +199,7 @@ public:
 
 	void recordPressed(bool &pressed);
 	void playbackPressed(bool &pressed);
+	void comparePressed(bool &pressed);
 	void fillScaleNotes(vector<string> scale);
 
 	// Scale Buttons Pressed

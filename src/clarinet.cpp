@@ -1,31 +1,9 @@
 #include "../apps/myApps/clarinet_synthesis/clarinet_synthesis/src/clarinet.h"
 #ifndef CLARINET_CPP
 #define CLARINET_CPP
-#include <utility>
-#include <algorithm>
-#include <chrono>
-#include <ctime>
 
 using namespace clarinet;
 using namespace Tonic;
-
-const int fDefaultBpm = 60;
-const double fDefaultVolume = .03;
-const char fNormalArticulation = 'n';
-const bool fStartOctave = false;
-
-const std::pair<string, double> fLowGb{ "lowGb", 164.81 };
-const std::pair<string, double> fLowG = { "lowG", 174.61 };
-const std::pair<string, double> fLowAb = { "lowAb", 185.00 };
-const std::pair<string, double> fLowA = { "lowA", 196.0 };
-const std::pair<string, double> fLowBb = { "lowBb", 207.65 };
-const std::pair<string, double> fLowB = { "lowB", 220.00 };
-const std::pair<string, double> fLowC = { "lowC", 233.08 };
-const std::pair<string, double> fLowDb = { "lowDb", 246.94 };
-const std::pair<string, double> fLowD = { "lowD", 261.63 };
-const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
-const std::pair<string, double> fLowE = { "lowE", 293.66 };
-const std::pair<string, double> fLowF = { "lowF", 311.13 };
 
 Clarinet::Clarinet() {
 	synth_ = new Synth();
@@ -94,14 +72,14 @@ void Clarinet::generateNote(string note_name) {
 		base_frequency *= 2;
 	}
 
-	// amplitude_envelope = ADSR().attack(.1).decay(.13).sustain(.5).release(.12);
-
-	modulator_one = .75 * SineWave().freq(3 * base_frequency);  // The leading decimal values correspond to the realtive importance
-	modulator_two = 0.5 * SineWave().freq(5 * base_frequency);  // of each modulator
-	modulator_three = .14 * SineWave().freq(7 * base_frequency);
-	modulator_four = .5 * SineWave().freq(9 * base_frequency);
-	modulator_five = .12 * SineWave().freq(11 * base_frequency);
-	modulator_six = .17 * SineWave().freq(13 * base_frequency);
+	// Modulators alter the base tone. The frequency for each is the next odd number (1,3,5,...) 
+	// multiplied by the base frequency
+	modulator_one = fModOneAmplitude * SineWave().freq(3 * base_frequency);
+	modulator_two = fModTwoAmplitude * SineWave().freq(5 * base_frequency);
+	modulator_three = fModThreeAmplitude * SineWave().freq(7 * base_frequency);
+	modulator_four = fModFourAmplitude * SineWave().freq(9 * base_frequency);
+	modulator_five = fModFiveAmplitude * SineWave().freq(11 * base_frequency);
+	modulator_six = fModSixAmplitude * SineWave().freq(13 * base_frequency);
 
 	*output_ = SineWave().freq(base_frequency) + modulator_one + modulator_two + modulator_three
 		+ modulator_four + modulator_five + modulator_six;

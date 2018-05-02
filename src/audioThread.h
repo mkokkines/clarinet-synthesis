@@ -31,6 +31,5 @@ public:
 
 	void threadedFunction();
 	void audioOut(float *output, int bufferSize, int nChannels);
-	void outputScale();
-	void playbackRecording();
+	void playSequenceOfNotes();
 };

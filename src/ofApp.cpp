@@ -142,6 +142,12 @@ void ofApp::setupRecordPlayback() {
 	playback_.setPosition(fLeftSideXCoord, fPlaybackYCoord);
 	playback_.setTextColor(BLACKNESS);
 	playback_.setBackgroundColor(ofColor::darkOliveGreen);
+
+	compare_recordings.setup("Analyze Recording", fToggleDefault, fNonScaleButtonSize, fNonScaleButtonSize);
+	compare_recordings.addListener(this, &ofApp::comparePressed);
+	compare_recordings.setPosition(fLeftSideXCoord, fCompareYCoord);
+	compare_recordings.setTextColor(BLACKNESS);
+	compare_recordings.setBackgroundColor(ofColor::blue);
 }
 
 //--------------------------------------------------------------
@@ -175,12 +181,15 @@ void ofApp::draw() {
 		drawPaused();
 	} else {
 		ofSetBackgroundColor(ofColor::white);
+		drawCompareMessages();
+		ofSetColor(ofColor::white);
 		drawFingering(current_note);
 
 		volume_slider.draw();
 		upper_octave.draw();
 		record_.draw();
 		playback_.draw();
+		compare_recordings.draw();
 		scale_tempo_slider.draw();
 
 		b_flat_scale.draw();
@@ -214,8 +223,20 @@ void ofApp::drawFingering(string note) {
 }
 
 void ofApp::drawPaused() {
-	ofDrawBitmapString(fPauseMessage, 400, 400);
-	SetTextColor(0, 0);
+	string print_message = fPauseFirstLine + fPauseSecondLine + fPauseThirdLine + fPauseFourthLine
+		+ fPauseFifthLine + fPauseSixthLine + fPauseSeventhLine + fPauseEighthLine + fPauseEighthLine
+		+ fPauseNinthLine + fPauseTenthLine;
+
+	ofTrueTypeFont font;
+	font.loadFont("Roboto-Black.ttf", 16);
+	ofSetColor(ofColor::black);
+	font.drawString(print_message, 50, 100);
+}
+
+void ofApp::drawCompareMessages() {
+	ofSetColor(ofColor::black);
+	ofDrawBitmapString(compare_messages.first, 10, 575);
+	ofDrawBitmapString(compare_messages.second, 10, 700);
 }
 
 //--------------------------------------------------------------
@@ -277,6 +298,9 @@ void ofApp::resizeRecordPlayback(double w_resize_factor, double h_resize_factor)
 
 	playback_.setPosition(fLeftSideXCoord * w_resize_factor, fPlaybackYCoord * h_resize_factor);
 	playback_.setSize(non_scale_button_size, non_scale_button_size);
+
+	compare_recordings.setPosition(fLeftSideXCoord * w_resize_factor, fCompareYCoord * h_resize_factor);
+	compare_recordings.setSize(non_scale_button_size, non_scale_button_size);
 }
 
 //--------------------------------------------------------------
@@ -309,13 +333,15 @@ void ofApp::keyPressed(int key) {
 }
 
 void ofApp::noteKeyPressed(int upper_key) {
-	if (record_) {
+	bool key_matches_note = key_to_note.find(upper_key) != key_to_note.end();
+
+	if (record_ && key_matches_note && !recorded_notes.empty()  && recorded_notes.back().first != "") {
 		double time_elapsed = fProgramDelay * (std::clock() - timer_) / (double) CLOCKS_PER_SEC;
 		recorded_notes.push_back({ "", time_elapsed });	// empty string indicates a pause
 		timer_ = std::clock();
 	}
 
-	if (key_to_note.find(upper_key) != key_to_note.end()) {
+	if (key_matches_note) {
 		current_note = key_to_note.at(upper_key);
 		audio_thread->setCurrentNote(current_note);
 		audio_thread->startThread(true, false);
@@ -345,9 +371,8 @@ void ofApp::volumeChanged(float &volume_slider) {
 
 //--------------------------------------------------------------
 void ofApp::recordPressed(bool &pressed) {
-	is_recording = pressed;
-
 	if (pressed) {
+		past_recorded_notes = recorded_notes;
 		recorded_notes.clear();
 		timer_ = std::clock();
 	}
@@ -361,6 +386,13 @@ void ofApp::playbackPressed(bool &pressed) {
 		timer_ = std::clock();
 	} else if (!pressed) {
 		audio_thread->stopThread();
+	}
+}
+
+void ofApp::comparePressed(bool &pressed) {
+	if (pressed && !past_recorded_notes.empty() && !recorded_notes.empty()) {
+		compare_messages = comparer.compareRecordings(past_recorded_notes, recorded_notes);
+		compare_recordings = false;
 	}
 }
 
@@ -389,89 +421,89 @@ void ofApp::bFlatScalePressed() {
 }
 
 void ofApp::eFlatScalePressed() {
-	audio_thread->setScaleToPlay("Eb");
+	fillScaleNotes(scales->at("Eb"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("Eb");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::aFlatScalePressed() {
-	audio_thread->setScaleToPlay("Ab");
+	fillScaleNotes(scales->at("Ab"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("Ab");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::dFlatScalePressed() {
-	audio_thread->setScaleToPlay("Db");
+	fillScaleNotes(scales->at("Db"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("Db");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::gFlatScalePressed() {
-	audio_thread->setScaleToPlay("Gb");
+	fillScaleNotes(scales->at("Gb"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("Gb");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::bMajorScalePressed() {
-	audio_thread->setScaleToPlay("BMajor");
+	fillScaleNotes(scales->at("BMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("BMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::aMajorScalePressed() {
-	audio_thread->setScaleToPlay("AMajor");
+	fillScaleNotes(scales->at("AMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("AMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::dMajorScalePressed() {
-	audio_thread->setScaleToPlay("DMajor");
+	fillScaleNotes(scales->at("DMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("DMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::gMajorScalePressed() {
-	audio_thread->setScaleToPlay("GMajor");
+	fillScaleNotes(scales->at("GMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("GMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::cMajorScalePressed() {
-	audio_thread->setScaleToPlay("CMajor");
+	fillScaleNotes(scales->at("CMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("CMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::fMajorScalePressed() {
-	audio_thread->setScaleToPlay("FMajor");
+	fillScaleNotes(scales->at("FMajor"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("FMajor");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }
 
 void ofApp::chromaticScalePressed() {
-	audio_thread->setScaleToPlay("chromatic");
+	fillScaleNotes(scales->at("chromatic"));
+	current_note = scale_notes[0].first;
+	audio_thread->setNotesToPlay(scale_notes);
 	audio_thread->startThread();
-	current_scale = scales->at("chromatic");
-	current_note = current_scale[0];
 	timer_ = std::clock();
 }

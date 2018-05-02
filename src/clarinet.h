@@ -12,6 +12,13 @@ const double fDefaultVolume = .03;
 const char fNormalArticulation = 'n';
 const bool fStartOctave = false;
 
+const double fModOneAmplitude = .75;
+const double fModTwoAmplitude = .5;
+const double fModThreeAmplitude = .14;
+const double fModFourAmplitude = .5;
+const double fModFiveAmplitude = .12;
+const double fModSixAmplitude = .17;
+
 const std::pair<string, double> fLowGb{ "lowGb", 164.81 };
 const std::pair<string, double> fLowG = { "lowG", 174.61 };
 const std::pair<string, double> fLowAb = { "lowAb", 185.00 };

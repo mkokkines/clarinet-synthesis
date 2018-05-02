@@ -7,6 +7,24 @@
 #include <map>
 #include <../apps/myApps/final project/Tonic-master/Tonic-master/src/Tonic.h>
 
+const int fDefaultBpm = 60;
+const double fDefaultVolume = .03;
+const char fNormalArticulation = 'n';
+const bool fStartOctave = false;
+
+const std::pair<string, double> fLowGb{ "lowGb", 164.81 };
+const std::pair<string, double> fLowG = { "lowG", 174.61 };
+const std::pair<string, double> fLowAb = { "lowAb", 185.00 };
+const std::pair<string, double> fLowA = { "lowA", 196.0 };
+const std::pair<string, double> fLowBb = { "lowBb", 207.65 };
+const std::pair<string, double> fLowB = { "lowB", 220.00 };
+const std::pair<string, double> fLowC = { "lowC", 233.08 };
+const std::pair<string, double> fLowDb = { "lowDb", 246.94 };
+const std::pair<string, double> fLowD = { "lowD", 261.63 };
+const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
+const std::pair<string, double> fLowE = { "lowE", 293.66 };
+const std::pair<string, double> fLowF = { "lowF", 311.13 };
+
 namespace clarinet {
 	class Clarinet {
 		Tonic::Generator* output_;

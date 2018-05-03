@@ -4,8 +4,8 @@
 
 const double fTimeDiffThreshold = 0.05; // Time differences less than 1/20th of a second are insignificant
 
-										// This class contains methods that compare to lists of recorded scales. It determines which wrong 
-										// notes were played and which notes were played for incorrect periods of time.
+// This class contains methods that compare to lists of recorded scales. It determines which wrong 
+// notes were played and which notes were played for incorrect periods of time.
 class RecordingComparer {
 private:
 	// Returns pairs of note names that differed between the two lists -- attempted recording first

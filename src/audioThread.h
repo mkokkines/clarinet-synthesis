@@ -17,23 +17,25 @@ private:
 	string current_note;
 	ofSoundStream* sound_stream;
 
-	string scale_to_play;
-	std::map<string, vector<string>>* scales;
-	double scale_tempo;
-
 	vector<pair<string, double>> notes_to_play;
 	bool play_sequence_complete;
+
+	void clear();
+	void copy(const AudioThread& source);
+	void move(AudioThread&& source);
 
 public:
 	AudioThread();
 	~AudioThread();
 
+	AudioThread(const AudioThread& source);                                           // Copy constructor
+	AudioThread(AudioThread&& source) noexcept;                                       // Move constructor
+	AudioThread& operator=(const AudioThread& source);								// Copy assignment operator
+	AudioThread& operator=(AudioThread&& source) noexcept;							// Move assignment operator
+
 	clarinet::Clarinet* getClarinet();
 
-	void setScales(map<string, vector<string>> copy_scale);
-	void setScaleToPlay(string scale);
 	void setCurrentNote(string note);
-	void setScaleTempo(double tempo);
 	void setNotesToPlay(vector<pair<string, double>> notes);
 
 	void threadedFunction();	// Called when the thread is opened; determines wherther to output a single note 

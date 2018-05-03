@@ -131,7 +131,6 @@ void ofApp::setupAudioVariables() {
 	volume_slider.setup("Volume", fVolumeStart, fVolumeMin, fVolumeMax, fDefaultSliderWidth, fDefaultSliderHeight);
 	volume_slider.setPosition(fLeftSideXCoord, fVolumeYCoord);
 
-	scale_tempo_slider.addListener(this, &ofApp::scaleTempoChanged);
 	scale_tempo_slider.setup("Scale Tempo BPM", fDefaultTempo, fMinTempo, fMaxTempo, fDefaultSliderWidth, fDefaultSliderHeight);
 	scale_tempo_slider.setPosition(fTempoSliderXCoord, fTempoSliderYCoord);
 }
@@ -150,7 +149,7 @@ void ofApp::setupRecordPlayback() {
 	playback_.setTextColor(BLACKNESS);
 	playback_.setBackgroundColor(ofColor::darkOliveGreen);
 
-	compare_recordings.setup("Analyze Recording", fToggleDefault, fNonScaleButtonSize, fNonScaleButtonSize);
+	compare_recordings.setup("Compare Recordings", fToggleDefault, fNonScaleButtonSize, fNonScaleButtonSize);
 	compare_recordings.addListener(this, &ofApp::comparePressed);
 	compare_recordings.setPosition(fLeftSideXCoord, fCompareYCoord);
 	compare_recordings.setTextColor(BLACKNESS);
@@ -390,7 +389,7 @@ void ofApp::keyReleased(int key) {
 
 	if (record_ && recorded_notes.empty()) {
 		int upper_key = toupper(key);
-		double time_elapsed = 0.4 * (std::clock() - timer_) / (double)CLOCKS_PER_SEC;
+		double time_elapsed = fProgramDelay * (std::clock() - timer_) / (double)CLOCKS_PER_SEC;
 		string note = adjustForOctave(key_to_note.at(upper_key));
 		recorded_notes.push_back({ note, time_elapsed });
 	} else if (record_) {
@@ -402,11 +401,6 @@ void ofApp::keyReleased(int key) {
 }
 
 //--------------------------------------------------------------
-// Changes the tempo the scales are played at in the audio thread when the tempo slider is dragged
-void ofApp::scaleTempoChanged(float &scale_tempo_slider) {
-	audio_thread->setScaleTempo(scale_tempo_slider);
-}
-
 // Changes the volume output by the audio thread when the volume slider is dragged
 void ofApp::volumeChanged(float &volume_slider) {
 	audio_thread->getClarinet()->setVolume(volume_slider);

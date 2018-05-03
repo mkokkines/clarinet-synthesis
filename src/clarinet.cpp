@@ -19,7 +19,7 @@ Clarinet::Clarinet() {
 		fMiddleD, fMiddleEb, fMiddleE, fMiddleF };
 }
 
-Clarinet::~Clarinet() {
+void Clarinet::clear() {
 	delete synth_;
 	synth_ = nullptr;
 
@@ -28,6 +28,55 @@ Clarinet::~Clarinet() {
 
 	delete note_frequencies;
 	note_frequencies = nullptr;
+
+	volume_ = 0;
+	higher_octave = false;
+}
+
+void Clarinet::copy(const Clarinet& source) {
+	synth_ = source.synth_;
+	output_ = source.output_;
+	note_frequencies = source.note_frequencies;
+	volume_ = source.volume_;
+	higher_octave = source.higher_octave;
+}
+
+void Clarinet::move(Clarinet&& source) {
+	synth_ = source.synth_;
+	output_ = source.output_;
+	note_frequencies = source.note_frequencies;
+	volume_ = source.volume_;
+	higher_octave = source.higher_octave;
+
+	delete source.synth_;
+	delete source.output_;
+	delete source.note_frequencies;
+}
+
+Clarinet::~Clarinet() {
+	clear();
+}
+
+Clarinet::Clarinet(const Clarinet& source) {
+	copy(source);
+}
+
+Clarinet::Clarinet(Clarinet&& source) noexcept {
+	move(source);
+}
+
+Clarinet& Clarinet::operator=(const Clarinet& source) {
+	copy(source);
+	return *this;
+}
+
+Clarinet& Clarinet::operator=(Clarinet&& source) noexcept {
+	move(source);
+	return *this;
+}
+
+Tonic::Synth Clarinet::getSynth() {
+	return *synth_;
 }
 
 double Clarinet::getVolume() {
@@ -46,12 +95,12 @@ void Clarinet::setHigherOctave(bool new_octave) {
 	higher_octave = new_octave;
 }
 
-// Firsts adjusts to ensure the correct octave is being played; then uses a base tone and six modulators to make the note sound
-// akin to a real woodwind instrument
+// Uses a base tone and six modulators to make the note sound akin to a real woodwind instrument
+// Note: this method, as ofApp is currently, will never be called with a nonexistent note name, but 
+// the first conditional is a precaution
 void Clarinet::generateNote(string note_name) {
-	if (note_name.substr(0, 6) == "middle") {
-		higher_octave = true;
-		note_name.replace(0, 6, "low");
+	if (note_frequencies->at(note_name) == note_frequencies->end()) {
+		return;
 	}
 
 	double base_frequency = note_frequencies->at(note_name);

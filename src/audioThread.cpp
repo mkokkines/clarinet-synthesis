@@ -1,13 +1,10 @@
 #include "audioThread.h"
 
-// Initializes a clarinet, sets up a sound stream to output audio, switches the default audio output 
-// from the main thread to this thread, and initializes the scale list. 
+// Initializes a clarinet, sets up a sound stream to output audio, and switches the default audio output 
+// from the main thread to this thread 
 AudioThread::AudioThread() {
 	clarinet_ = new clarinet::Clarinet();
 
-	scales = new map<string, vector<string>>();
-	scale_to_play = "";					// When scale_to_play = "", no scale will be played
-	scale_tempo = fDefaultScaleTempo;
 	play_sequence_complete = false;
 
 	sound_stream = new ofSoundStream();
@@ -16,12 +13,7 @@ AudioThread::AudioThread() {
 	sound_stream->setOutput(this);
 }
 
-AudioThread::~AudioThread() {
-	scales = nullptr;
-	delete scales;
-
-	scale_to_play = nullptr;
-
+void AudioThread::clear() {
 	delete clarinet_;
 	clarinet_ = nullptr;
 
@@ -29,24 +21,53 @@ AudioThread::~AudioThread() {
 	sound_stream->close();
 }
 
+void AudioThread::copy(const AudioThread& source) {
+	clarinet_ = source.clarinet_;
+	sound_stream = source.sound_stream;
+	play_sequence_complete = source.play_sequence_complete;
+
+	sound_stream->setOutput(this);
+}
+
+void AudioThread::move(AudioThread&& source) {
+	clarinet_ = source.clarinet_;
+	sound_stream = source.sound_stream;
+	play_sequence_complete = source.play_sequence_complete;
+
+	delete source.clarinet_;
+	delete source.sound_stream;
+
+	sound_stream->setOutput(this);
+}
+
+AudioThread::~AudioThread() {
+	clear();
+}
+
+AudioThread::AudioThread(const AudioThread& source) {
+	copy(source);
+}
+
+AudioThread::AudioThread(AudioThread&& source) noexcept {
+	move(source);
+}
+
+AudioThread& AudioThread::operator=(const AudioThread& source) {
+	copy(source);
+	return *this;
+}
+
+AudioThread& AudioThread::operator=(AudioThread&& source) noexcept {
+	move(source);
+	return *this;
+}
+
 clarinet::Clarinet* AudioThread::getClarinet() {
 	return clarinet_;
 }
 
-void AudioThread::setScales(map<string, vector<string>> copy_scale) {
-	*scales = copy_scale;
-}
-
-void AudioThread::setScaleToPlay(string scale) {
-	scale_to_play = scale;
-}
-
 void AudioThread::setCurrentNote(string note) {
 	current_note = note;
-}
-
-void AudioThread::setScaleTempo(double tempo) {
-	scale_tempo = tempo;
 }
 
 void AudioThread::setNotesToPlay(vector<pair<string, double>> notes) {
@@ -79,8 +100,8 @@ void AudioThread::threadedFunction() {
 void AudioThread::audioOut(float *output, int bufferSize, int nChannels) {
 	clarinet_->generateNote(current_note);
 
-	if (clarinet_->synth_ != NULL) {
-		clarinet_->synth_->fillBufferOfFloats(output, bufferSize, nChannels);
+	if (clarinet_->getSynth() != NULL) {
+		clarinet_->getSynth->fillBufferOfFloats(output, bufferSize, nChannels);
 	}
 }
 

@@ -105,7 +105,7 @@ const std::pair<string, vector<string>> fChromaticScale = { "chromatic",{ "lowG"
 // functions that update the GUI, and the audio thread.
 class ofApp : public ofBaseApp {
 private:
-	AudioThread * audio_thread;
+	AudioThread *audio_thread;
 
 	RecordingComparer comparer;
 	pair<string, string> compare_messages;
@@ -203,7 +203,6 @@ public:
 	void windowResized(int w, int h);
 
 	// Change GUI elements corresponding to different variables
-	void scaleTempoChanged(float &scale_tempo_slider);
 	void volumeChanged(float &volume);
 	void upperOctavePressed(bool &pressed);
 	void recordPressed(bool &pressed);

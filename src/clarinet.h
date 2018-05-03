@@ -67,9 +67,20 @@ namespace clarinet {
 
 		std::map<string, double>* note_frequencies;
 
+		void clear();
+		void copy(const Clarinet&& source);
+		void move(Clarinet&& source);
+
 	public:
 		Clarinet();
 		~Clarinet();
+
+		Clarinet(const Clarinet& source);                                           // Copy constructor
+		Clarinet(Clarinet&& source) noexcept;                                       // Move constructor
+		Clarinet& operator=(const Clarinet& source);								// Copy assignment operator
+		Clarinet& operator=(Clarinet&& source) noexcept;							// Move assignment operator
+
+		Tonic::Synth Clarinet::getSynth();
 
 		double Clarinet::getVolume();
 		bool Clarinet::getHigherOctave();

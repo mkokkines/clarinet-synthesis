@@ -5,21 +5,29 @@
 using namespace clarinet;
 using namespace Tonic;
 
+// Initializes the synth, the output generator, and the map of note frequencies
 Clarinet::Clarinet() {
 	synth_ = new Synth();
 	output_ = new Generator();
-	metronome_ = new ControlMetro();
-
-	current_note = "lowGb";
 
 	volume_ = fDefaultVolume;
-	articulation_ = fNormalArticulation;
 	higher_octave = fStartOctave;
 
 	note_frequencies = new std::map<string, double>();
-	*note_frequencies = { fLowGb, fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF };
+	*note_frequencies = { fLowGb, fLowG, fLowAb, fLowA, fLowBb, fLowB, fLowC, fLowDb, fLowD, fLowEb, fLowE, fLowF,
+		fMiddleGb, fMiddleG, fMiddleAb, fMiddleA, fMiddleBb, fMiddleB, fMiddleC, fMiddleDb,
+		fMiddleD, fMiddleEb, fMiddleE, fMiddleF };
+}
 
-	scales = new std::map<string, vector<string>>();
+Clarinet::~Clarinet() {
+	delete synth_;
+	synth_ = nullptr;
+
+	delete output_;
+	output_ = nullptr;
+
+	delete note_frequencies;
+	note_frequencies = nullptr;
 }
 
 double Clarinet::getVolume() {
@@ -36,26 +44,6 @@ void Clarinet::setVolume(double new_volume) {
 
 void Clarinet::setHigherOctave(bool new_octave) {
 	higher_octave = new_octave;
-}
-
-void Clarinet::setBeat(int beat) {
-	metronome_->bpm(beat);
-}
-
-void Clarinet::setArticulation(char articulation) {
-	articulation_ = articulation;
-}
-
-// Changes the name of the note if it is in the higher octave
-string Clarinet::adjustForOctave(string note) {
-	if (higher_octave && note.substr(0, 3) == "low") {
-		return note.replace(0, 3, "middle");
-	}
-	else if (note.substr(0, 6) == "middle") {
-		higher_octave = true;
-	}
-
-	return note;
 }
 
 // Firsts adjusts to ensure the correct octave is being played; then uses a base tone and six modulators to make the note sound
@@ -84,7 +72,7 @@ void Clarinet::generateNote(string note_name) {
 	*output_ = SineWave().freq(base_frequency) + modulator_one + modulator_two + modulator_three
 		+ modulator_four + modulator_five + modulator_six;
 
-	synth_->setOutputGen(*output_ * volume_);
+	synth_->setOutputGen(*output_ * volume_);	// Changes the amplitude of the wave based on the volume
 }
 
 #endif //CLARINET_CPP

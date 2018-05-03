@@ -6,11 +6,15 @@
 #include <vector>
 #include <map>
 #include <../apps/myApps/final project/Tonic-master/Tonic-master/src/Tonic.h>
+#include <utility>
+#include <algorithm>
+#include <chrono>
+#include <ctime>
 
 const int fDefaultBpm = 60;
 const double fDefaultVolume = .03;
-const char fNormalArticulation = 'n';
 const bool fStartOctave = false;
+const double fHigherOctaveFrequencyFactor = 2;
 
 const double fModOneAmplitude = .75;
 const double fModTwoAmplitude = .5;
@@ -19,7 +23,8 @@ const double fModFourAmplitude = .5;
 const double fModFiveAmplitude = .12;
 const double fModSixAmplitude = .17;
 
-const std::pair<string, double> fLowGb{ "lowGb", 164.81 };
+// Name of note followed by its base frequency
+const std::pair<string, double> fLowGb = { "lowGb", 164.81 };
 const std::pair<string, double> fLowG = { "lowG", 174.61 };
 const std::pair<string, double> fLowAb = { "lowAb", 185.00 };
 const std::pair<string, double> fLowA = { "lowA", 196.0 };
@@ -31,11 +36,24 @@ const std::pair<string, double> fLowD = { "lowD", 261.63 };
 const std::pair<string, double> fLowEb = { "lowEb", 277.18 };
 const std::pair<string, double> fLowE = { "lowE", 293.66 };
 const std::pair<string, double> fLowF = { "lowF", 311.13 };
+const std::pair<string, double> fMiddleGb = { "middleGb", 329.62 };
+const std::pair<string, double> fMiddleG = { "middleG", 349.22 };
+const std::pair<string, double> fMiddleAb = { "middleAb", 370.00 };
+const std::pair<string, double> fMiddleA = { "middleA", 392.00 };
+const std::pair<string, double> fMiddleBb = { "middleBb", 415.30 };
+const std::pair<string, double> fMiddleB = { "middleB", 440.00 };
+const std::pair<string, double> fMiddleC = { "middleC", 466.16 };
+const std::pair<string, double> fMiddleDb = { "middleDb", 493.88 };
+const std::pair<string, double> fMiddleD = { "middleD", 523.26 };
+const std::pair<string, double> fMiddleEb = { "middleEb", 554.36 };
+const std::pair<string, double> fMiddleE = { "middleE", 587.32 };
+const std::pair<string, double> fMiddleF = { "middleF", 622.26 };
 
+// This class generates the sinewaves for each clarinet note
 namespace clarinet {
 	class Clarinet {
+		Tonic::Synth* synth_;
 		Tonic::Generator* output_;
-		Tonic::ControlMetro* metronome_;
 
 		Tonic::Generator modulator_one;
 		Tonic::Generator modulator_two;
@@ -44,24 +62,14 @@ namespace clarinet {
 		Tonic::Generator modulator_five;
 		Tonic::Generator modulator_six;
 
-		Tonic::ADSR amplitude_envelope;
-		Tonic::ADSR modulation_index_envelope;
-
-		char articulation_;
 		double volume_;
-		string current_note;
 		bool higher_octave;
 
 		std::map<string, double>* note_frequencies;
-		std::map<string, vector<string>>* scales;
-
-		/* void Clarinet::copy(Clarinet& source);
-		void Clarinet::move(Clarinet&& source);
-		void Clarinet::clear(); */
 
 	public:
-		Tonic::Synth* synth_;
 		Clarinet();
+		~Clarinet();
 
 		double Clarinet::getVolume();
 		bool Clarinet::getHigherOctave();
@@ -69,12 +77,8 @@ namespace clarinet {
 		void Clarinet::setVolume(double new_volume);
 		void Clarinet::setHigherOctave(bool new_octave);
 
-		void Clarinet::setArticulation(char articulation);
-		void Clarinet::setBeat(int beat);
-
-		string adjustForOctave(string note);
-
-		void Clarinet::generateNote(string note_name);
+		void Clarinet::generateNote(string note_name); // Uses frequency modulation to generate the sinewaves
+													   // for clarinet notes
 	};
 
 }

@@ -1,18 +1,17 @@
 #pragma once
 #include "../addons/ofxGui/src/ofxSlider.h"
 #include "../addons/ofxGui/src/ofxButton.h"
-#include "ofMain.h"
 #include "clarinet.h"
 #include "../audioThread.h"
 #include "../recordingComparer.h"
 
-const double fVolumeInterval = .05;
+const double fVolumeInterval = .05;	
 
 const int fDefaultWindowWidth = 1024;
 const int fDefaultWindowHeight = 768;
 const int fDefaultFrameRate = 60;
 
-const int fLeftSideXCoord = 150;
+const int fLeftSideXCoord = 150;		// Left of the clarinet diagram
 
 const int fVolumeYCoord = 50;
 const double fVolumeMin = 0;
@@ -27,7 +26,7 @@ const int fCompareYCoord = 450;
 const int fNonScaleButtonSize = 85;
 const bool fToggleDefault = false;
 
-const int fRightSideFirstColumn = 725;
+const int fRightSideFirstColumn = 725;		// Right side is right of the clarinet diagram
 const int fRightSideSecondColumn = 850;
 const int fFirstRow = 150;
 const int fSecondRow = 250;
@@ -53,7 +52,16 @@ const double fMinTempo = 0;
 const double fMaxTempo = 240;
 const double fSecPerMin = 60;
 
-const double fProgramDelay = .63;
+const string fFontFileAddress = "Roboto-Black.ttf";
+const int fFontSize = 16;
+const int fPauseXCoord = 150;
+const int fPauseYCoord = 250;
+
+const int fCompareMessageXCoord = 10;
+const int fFirstCompareMessageYCoord = 575;
+const int fSecondCompareMessageYCoord = 700;
+
+const double fProgramDelay = .63;	// the program instructions take a certain period of time to run, lengthening pauses
 
 const string fPauseFirstLine = "Welcome to the clarinet music synthesis application.\n";
 const string fPauseSecondLine = "The app will allow you to play/learn realistic clarinet.\n";
@@ -65,6 +73,8 @@ const string fPauseSeventhLine = "4) Press any of the scale buttons to see that 
 const string fPauseEighthLine = "5) Drag the tempo slider to change the bpm of the scales.\n";
 const string fPauseNinthLine = "6) Press the record button and play a series of notes to record\n";
 const string fPauseTenthLine = "7) Press the playback button to hear your most recent recording\n";
+
+const string fNoFingersNote = "middleG"; // middleG shows no fingers
 
 const map<char, string> key_to_note = { { 'Q', "lowGb" },{ 'A', "lowG" },{ 'W', "lowAb" },{ 'S', "lowA" },{ 'E', "lowBb" },
 { 'D', "lowB" },{ 'F', "lowC" },{ 'T', "lowDb" },{ 'G', "lowD" },{ 'Y', "lowEb" },
@@ -91,7 +101,8 @@ const std::pair<string, vector<string>> fFMajorScale = { "FMajor",{ "lowG", "low
 const std::pair<string, vector<string>> fChromaticScale = { "chromatic",{ "lowG", "lowAb", "lowA", "lowBb", "lowB", "lowC", "lowDb",
 "lowD", "lowEb", "lowE", "lowF", "middleGb", "middleG" } };
 
-
+// This class contains the graphic user interface, the functions that allow the user to interact with the GUI, the
+// functions that update the GUI, and the audio thread.
 class ofApp : public ofBaseApp {
 private:
 	AudioThread * audio_thread;
@@ -100,22 +111,22 @@ private:
 	pair<string, string> compare_messages;
 
 	bool is_paused;
-	bool is_recording;
 
-	vector<pair<string, double>> scale_notes;
-	vector<pair<string, double>> recorded_notes;
-	vector<pair<string, double>> past_recorded_notes;
+	std::map<string, ofImage> fingering_images;
+	std::map<string, vector<string>>* scales;				// List of the scales by their names
+	vector<pair<string, double>> scale_notes;				// The notes corresponding to one scale
+	vector<pair<string, double>> recorded_notes;			// most recent recording
+	vector<pair<string, double>> past_recorded_notes;		// previous recording
 
 	string current_note;
-	vector<string> current_scale;
 	std::clock_t timer_;
 
 	ofxFloatSlider volume_slider;
 	ofxFloatSlider scale_tempo_slider;
-	ofxToggle upper_octave;
+	ofxToggle upper_octave;				// true when playing the upper octave
 	ofxToggle record_;
 	ofxToggle playback_;
-	ofxToggle compare_recordings;
+	ofxToggle compare_recordings;		
 
 	// scale buttons
 	ofxButton b_flat_scale;
@@ -159,48 +170,45 @@ private:
 	ofImage highGb;
 	ofImage highG;
 
-	std::map<string, ofImage> fingering_images;
-	std::map<string, vector<string>>* scales;
+	// Used during setup
+	void loadImages();				// Loads clarinet fingering image and places into map
+	void setupScales();				// Set up scale buttons and map
+	void setupAudioVariables();		// Set up buttons for volume, tempo, and octave
+	void setupRecordPlayback();		// Set up record, playback, and compare functionality
 
-	std::vector<pair<double, string>>* tune;
+	// Used during update. Moves to next note when playing scales or a recording
+	void updateNoteList(vector<pair<string, double>> &note_list); 
 
-	void loadImages();
-
-public:
-	void setup();
-	void setupScales();
-	void setupAudioVariables();
-	void setupRecordPlayback();
-
-	void update();
-	void updateNoteList(vector<pair<string, double>> &note_list);
-
-	void keyPressed(int key);
-	void keyReleased(int key);
-
-	void windowResized(int w, int h);
-	void resizeScales(double w_resize_factor, double h_resize_factor);
-	void resizeAudioVariables(double w_resize_factor, double h_resize_factor);
-	void resizeRecordPlayback(double w_resize_factor, double h_resize_factor);
-	
-	void draw();
+	// Used during draw
 	void drawFingering(string note);
 	void drawPaused();
 	void drawCompareMessages();
 
+	// Used during window resizing
+	void resizeScales(double w_resize_factor, double h_resize_factor);
+	void resizeAudioVariables(double w_resize_factor, double h_resize_factor);
+	void resizeRecordPlayback(double w_resize_factor, double h_resize_factor);
+
+	string adjustForOctave(string note);		// Adjusts the name of the note being played to match the octave
+	void noteKeyPressed(int upper_key);			// Helper function used during keyPressed
+	void fillScaleNotes(vector<string> scale);	// Assigns time values (e.g. hold for .5 sec) to each note in scale
+
+public:
+	void setup();
+	void update();
+	void draw();
+
+	void keyPressed(int key);
+	void keyReleased(int key);
+	void windowResized(int w, int h);
+
+	// Change GUI elements corresponding to different variables
 	void scaleTempoChanged(float &scale_tempo_slider);
 	void volumeChanged(float &volume);
-
-	string ofApp::adjustForOctave(string note);
-
-	void noteKeyPressed(int upper_key);
-
-	void ofApp::upperOctavePressed(bool &pressed);
-
+	void upperOctavePressed(bool &pressed);
 	void recordPressed(bool &pressed);
 	void playbackPressed(bool &pressed);
 	void comparePressed(bool &pressed);
-	void fillScaleNotes(vector<string> scale);
 
 	// Scale Buttons Pressed
 	void bFlatScalePressed();
